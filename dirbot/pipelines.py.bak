@@ -1,0 +1,53 @@
+# -*- coding: utf-8 -*- 
+from scrapy.exceptions import DropItem
+from scrapy import signals
+import MySQLdb
+import MySQLdb.cursors
+import codecs
+import sys
+class FilterWordsPipeline(object):
+    """A pipeline for filtering out items which contain certain words in their
+    description"""
+
+    # put all words in lowercase
+    #words_to_filter = ['politics', 'religion']
+    def __init__(self):
+	self.conn = MySQLdb.connect('root', 'mysql', 'co_dbbase', 'localhost', "utf8", True)
+	self.cursor = self.conn.cursor()
+    def process_item(self, item, spider):
+	#print "endcode"
+	#print item 
+	#print "encode"
+	#linkmd5id = self._get_linkmd5id(item)
+	#print linkmd5id
+	print "**************"
+	print item["url_id"]
+	print "*************"
+	self.cursor.execute("""
+                select id from co_movie  where url_id = %s
+        """, (item["url_id"], ))
+	self.conn.commit()
+	ret = self.conn.fetchone()
+	print ret
+        if ret:
+		pass
+		#print """
+		#    update cnblogsinfo set title = %s, description = %s, link = %s, listUrl = %s, updated = %s where linkmd5id = %s
+		#""", (item['title'], item['desc'], item['link'], item['listUrl'], now, linkmd5id)
+        else:
+		print "start insert"
+		divs = MySQLdb.escape_string(item['divcontent'])
+		try:
+			'''
+			conn.execute("""
+				insert into co_movie(url_id, title,xflink,divcontent, kind, create_time) values(%d, %s, %s, %s, %d, %d)
+			""", (item["url_id"],item['title'], item['xflink'], divs, item['kind'], item["create_time"]))'''
+			self.cursor.execute("""
+                                insert into co_movie (url_id) values(%d)
+                        """, (item["url_id"],))
+			self.conn.commit()
+		except MySQLdb.Error, e:
+			print "Error %d: %s" % (e.args[0], e.args[1])
+	#conn.close()
+	return item
+	
